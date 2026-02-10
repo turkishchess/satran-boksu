@@ -1,2 +1,176 @@
 # satran-boksu
 satranç boksu oynar mıydınız
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satranç Boksu</title>
+
+<style>
+body{
+  font-family: Arial, sans-serif;
+  text-align:center;
+  background:#222;
+  color:white;
+}
+
+#board{
+  width:320px;
+  margin:20px auto;
+  display:grid;
+  grid-template-columns:repeat(8,40px);
+}
+
+.square{
+  width:40px;
+  height:40px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:22px;
+}
+
+.white{ background:#eee; color:black; }
+.black{ background:#555; }
+
+button{
+  padding:10px 20px;
+  font-size:16px;
+  margin:10px;
+  cursor:pointer;
+}
+
+#boxing{
+  display:none;
+  margin-top:20px;
+}
+
+.hp{
+  width:200px;
+  height:20px;
+  background:red;
+  margin:10px auto;
+  position:relative;
+}
+
+.hp span{
+  position:absolute;
+  left:0;
+  top:0;
+  bottom:0;
+  background:lime;
+}
+</style>
+</head>
+
+<body>
+
+<h1>♟️🥊 Satranç Boksu</h1>
+
+<div id="modeText">Mod: Satranç</div>
+<button onclick="switchMode()">Mod Değiştir</button>
+
+<!-- SATRANÇ -->
+<div id="board"></div>
+
+<!-- BOKS -->
+<div id="boxing">
+  <h2>Boks Raundu</h2>
+
+  Senin Canın
+  <div class="hp"><span id="hp1" style="width:100%"></span></div>
+
+  Rakip Canı
+  <div class="hp"><span id="hp2" style="width:100%"></span></div>
+
+  <button onclick="punch()">Yumruk At</button>
+</div>
+
+<script>
+/* ================= SATRANÇ ================= */
+
+const board = document.getElementById("board");
+
+const start =
+"♜♞♝♛♚♝♞♜" +
+"♟♟♟♟♟♟♟♟" +
+"        " +
+"        " +
+"        " +
+"        " +
+"♙♙♙♙♙♙♙♙" +
+"♖♘♗♕♔♗♘♖";
+
+function drawBoard(){
+  board.innerHTML="";
+  for(let i=0;i<64;i++){
+    const sq=document.createElement("div");
+    sq.className="square "+(((i+Math.floor(i/8))%2)?"black":"white");
+    sq.textContent=start[i];
+    board.appendChild(sq);
+  }
+}
+drawBoard();
+
+/* ================= MOD DEĞİŞTİR ================= */
+
+let chessMode=true;
+
+function switchMode(){
+  chessMode=!chessMode;
+
+  document.getElementById("modeText").textContent =
+    chessMode ? "Mod: Satranç" : "Mod: Boks";
+
+  board.style.display = chessMode ? "grid" : "none";
+  document.getElementById("boxing").style.display =
+    chessMode ? "none" : "block";
+}
+
+/* ================= BOKS ================= */
+
+let hp1=100;
+let hp2=100;
+
+function punch(){
+  if(chessMode) return;
+
+  const dmg=Math.floor(Math.random()*20)+5;
+  hp2-=dmg;
+
+  if(hp2<0) hp2=0;
+
+  document.getElementById("hp2").style.width=hp2+"%";
+
+  if(hp2===0){
+    alert("Kazandın! 🏆");
+    resetGame();
+    return;
+  }
+
+  // rakip vurur
+  const enemy=Math.floor(Math.random()*15)+5;
+  hp1-=enemy;
+  if(hp1<0) hp1=0;
+
+  document.getElementById("hp1").style.width=hp1+"%";
+
+  if(hp1===0){
+    alert("Kaybettin 😢");
+    resetGame();
+  }
+}
+
+function resetGame(){
+  hp1=100;
+  hp2=100;
+  document.getElementById("hp1").style.width="100%";
+  document.getElementById("hp2").style.width="100%";
+  chessMode=true;
+  switchMode();
+}
+</script>
+
+</body>
+</html>
