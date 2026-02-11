@@ -4,126 +4,77 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Satranç Boksu</title>
-
 <style>
-body{
-    background:#222;
-    color:white;
-    font-family:Arial;
-    text-align:center;
-}
-
-#board{
-    width:320px;
-    margin:20px auto;
-    display:grid;
-    grid-template-columns:repeat(8,40px);
-}
-
-.square{
-    width:40px;
-    height:40px;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    font-size:24px;
-    cursor:pointer;
-}
-
-.white{background:#eee;color:black;}
-.black{background:#555;}
-
-#mode{
-    font-size:24px;
-    margin-top:10px;
-}
-
-#timer{
-    font-size:28px;
-    margin:10px;
-}
+body{background:#111;color:white;text-align:center;font-family:Arial}
+#board{width:320px;margin:20px auto;display:grid;grid-template-columns:repeat(8,40px)}
+.square{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.white{background:#1faa00}.black{background:#b30000}
 </style>
 </head>
-
 <body>
-
 <h1>♟️ Satranç Boksu 🥊</h1>
-<div id="mode">Satranç</div>
-<div id="timer">03:00</div>
-
 <div id="board"></div>
 
 <script>
-const board = document.getElementById("board");
+const board=document.getElementById("board");
 
-const initial =
-[
-["♜","♞","♝","♛","♚","♝","♞","♜"],
-["♟","♟","♟","♟","♟","♟","♟","♟"],
-["","","","","","","",""],
-["","","","","","","",""],
-["","","","","","","",""],
-["","","","","","","",""],
-["♙","♙","♙","♙","♙","♙","♙","♙"],
-["♖","♘","♗","♕","♔","♗","♘","♖"]
+const start=[
+"r","n","b","q","k","b","n","r",
+"p","p","p","p","p","p","p","p",
+"","","","","","","","",
+"","","","","","","","",
+"","","","","","","","",
+"","","","","","","","",
+"P","P","P","P","P","P","P","P",
+"R","N","B","Q","K","B","N","R"
 ];
 
-let selected = null;
+let pieces=[...start];
+let selected=null;
+let turn="white";
 
-/* TAHTAYI ÇİZ */
+const icons={P:"♙",R:"♖",N:"♘",B:"♗",Q:"♕",K:"♔",p:"♟",r:"♜",n:"♞",b:"♝",q:"♛",k:"♚"};
+
 function draw(){
-    board.innerHTML="";
-    for(let y=0;y<8;y++){
-        for(let x=0;x<8;x++){
-            const d=document.createElement("div");
-            d.className="square "+((x+y)%2?"black":"white");
-            d.textContent=initial[y][x];
+  board.innerHTML="";
+  pieces.forEach((p,i)=>{
+    const d=document.createElement("div");
+    const r=Math.floor(i/8),c=i%8;
+    d.className="square "+((r+c)%2?"black":"white");
+    d.textContent=icons[p]||"";
+    if(p) d.style.color=p===p.toUpperCase()?"white":"black";
+    d.onclick=()=>click(i);
+    board.appendChild(d);
+  });
+}
 
-            d.onclick=()=>{
-                if(mode!=="Satranç") return;
+function sameColor(a,b){
+  if(!a||!b) return false;
+  return (a===a.toUpperCase())===(b===b.toUpperCase());
+}
 
-                if(selected){
-                    initial[y][x]=initial[selected.y][selected.x];
-                    initial[selected.y][selected.x]="";
-                    selected=null;
-                    draw();
-                }else if(initial[y][x]!=""){
-                    selected={x,y};
-                }
-            };
+function click(i){
+  if(selected===null){
+    if(!pieces[i]) return;
+    if(turn==="white" && pieces[i]!==pieces[i].toUpperCase()) return;
+    if(turn==="black" && pieces[i]!==pieces[i].toLowerCase()) return;
+    selected=i;return;
+  }
 
-            board.appendChild(d);
-        }
-    }
+  if(i===selected){selected=null;return;}
+
+  if(sameColor(pieces[selected],pieces[i])){selected=i;return;}
+
+  // ŞİMDİLİK SERBEST HAMLE (oynanabilsin diye)
+  pieces[i]=pieces[selected];
+  pieces[selected]="";
+  selected=null;
+  turn=turn==="white"?"black":"white";
+  draw();
 }
 
 draw();
-
-/* ZAMAN SİSTEMİ */
-let mode="Satranç";
-let time=180; // 3 dk
-
-function tick(){
-    time--;
-
-    let m=Math.floor(time/60).toString().padStart(2,"0");
-    let s=(time%60).toString().padStart(2,"0");
-    document.getElementById("timer").textContent=m+":"+s;
-
-    if(time<=0){
-        if(mode==="Satranç"){
-            mode="Boks";
-            time=60;
-        }else{
-            mode="Satranç";
-            time=180;
-        }
-        document.getElementById("mode").textContent=mode;
-    }
-}
-
-setInterval(tick,1000);
 </script>
-
 </body>
 </html>
+
