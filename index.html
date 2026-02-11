@@ -1,140 +1,129 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Satranç Boksu</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Satranç Boksu</title>
 
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      text-align: center;
-      background: #222;
-      color: white;
-    }
+<style>
+body{
+    background:#222;
+    color:white;
+    font-family:Arial;
+    text-align:center;
+}
 
-    h1 {
-      margin-top: 20px;
-    }
+#board{
+    width:320px;
+    margin:20px auto;
+    display:grid;
+    grid-template-columns:repeat(8,40px);
+}
 
-    #mode {
-      font-size: 24px;
-      margin: 10px;
-    }
+.square{
+    width:40px;
+    height:40px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:24px;
+    cursor:pointer;
+}
 
-    #timer {
-      font-size: 28px;
-      margin-bottom: 20px;
-    }
+.white{background:#eee;color:black;}
+.black{background:#555;}
 
-    #board {
-      width: 320px;
-      margin: 20px auto;
-      display: grid;
-      grid-template-columns: repeat(8, 40px);
-    }
+#mode{
+    font-size:24px;
+    margin-top:10px;
+}
 
-    .square {
-      width: 40px;
-      height: 40px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 22px;
-      cursor: pointer;
-    }
-
-    .white { background: #eee; color: black; }
-    .black { background: #666; }
-
-    #boxing {
-      display: none;
-      font-size: 40px;
-      margin-top: 30px;
-    }
-
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-    }
-  </style>
+#timer{
+    font-size:28px;
+    margin:10px;
+}
+</style>
 </head>
 
 <body>
-  <h1>♟️ Satranç Boksu 🥊</h1>
 
-  <div id="mode">Mod: Satranç</div>
-  <div id="timer">Kalan süre: 180</div>
+<h1>♟️ Satranç Boksu 🥊</h1>
+<div id="mode">Satranç</div>
+<div id="timer">03:00</div>
 
-  <div id="board"></div>
+<div id="board"></div>
 
-  <div id="boxing">🥊 BOKS ZAMANI! 🥊</div>
+<script>
+const board = document.getElementById("board");
 
-  <button onclick="startGame()">Başlat</button>
+const initial =
+[
+["♜","♞","♝","♛","♚","♝","♞","♜"],
+["♟","♟","♟","♟","♟","♟","♟","♟"],
+["","","","","","","",""],
+["","","","","","","",""],
+["","","","","","","",""],
+["","","","","","","",""],
+["♙","♙","♙","♙","♙","♙","♙","♙"],
+["♖","♘","♗","♕","♔","♗","♘","♖"]
+];
 
-  <script>
-    const board = document.getElementById("board");
-    const modeText = document.getElementById("mode");
-    const timerText = document.getElementById("timer");
-    const boxingText = document.getElementById("boxing");
+let selected = null;
 
-    let mode = "chess"; // chess veya boxing
-    let time = 180; // 3 dk satranç
-    let interval;
+/* TAHTAYI ÇİZ */
+function draw(){
+    board.innerHTML="";
+    for(let y=0;y<8;y++){
+        for(let x=0;x<8;x++){
+            const d=document.createElement("div");
+            d.className="square "+((x+y)%2?"black":"white");
+            d.textContent=initial[y][x];
 
-    const pieces = [
-      "♜","♞","♝","♛","♚","♝","♞","♜",
-      "♟","♟","♟","♟","♟","♟","♟","♟",
-      "","","","","","","","",
-      "","","","","","","","",
-      "","","","","","","","",
-      "","","","","","","","",
-      "♙","♙","♙","♙","♙","♙","♙","♙",
-      "♖","♘","♗","♕","♔","♗","♘","♖"
-    ];
+            d.onclick=()=>{
+                if(mode!=="Satranç") return;
 
-    function drawBoard() {
-      board.innerHTML = "";
-      pieces.forEach((piece, i) => {
-        const square = document.createElement("div");
-        square.className =
-          "square " + ((Math.floor(i / 8) + i) % 2 === 0 ? "white" : "black");
-        square.textContent = piece;
-        board.appendChild(square);
-      });
-    }
+                if(selected){
+                    initial[y][x]=initial[selected.y][selected.x];
+                    initial[selected.y][selected.x]="";
+                    selected=null;
+                    draw();
+                }else if(initial[y][x]!=""){
+                    selected={x,y};
+                }
+            };
 
-    function switchMode() {
-      if (mode === "chess") {
-        mode = "boxing";
-        time = 60; // 1 dk boks
-        modeText.textContent = "Mod: Boks";
-        boxingText.style.display = "block";
-        board.style.display = "none";
-      } else {
-        mode = "chess";
-        time = 180; // tekrar 3 dk satranç
-        modeText.textContent = "Mod: Satranç";
-        boxingText.style.display = "none";
-        board.style.display = "grid";
-      }
-    }
-
-    function startGame() {
-      clearInterval(interval);
-      drawBoard();
-      interval = setInterval(() => {
-        time--;
-        timerText.textContent = "Kalan süre: " + time;
-
-        if (time <= 0) {
-          switchMode();
+            board.appendChild(d);
         }
-      }, 1000);
     }
+}
 
-    drawBoard();
-  </script>
+draw();
+
+/* ZAMAN SİSTEMİ */
+let mode="Satranç";
+let time=180; // 3 dk
+
+function tick(){
+    time--;
+
+    let m=Math.floor(time/60).toString().padStart(2,"0");
+    let s=(time%60).toString().padStart(2,"0");
+    document.getElementById("timer").textContent=m+":"+s;
+
+    if(time<=0){
+        if(mode==="Satranç"){
+            mode="Boks";
+            time=60;
+        }else{
+            mode="Satranç";
+            time=180;
+        }
+        document.getElementById("mode").textContent=mode;
+    }
+}
+
+setInterval(tick,1000);
+</script>
+
 </body>
 </html>
