@@ -4,65 +4,35 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Satranç Boksu</title>
-
 <style>
-body{
-  background:#111;
-  color:white;
-  text-align:center;
-  font-family:Arial;
-}
-
-#board{
-  width:320px;
-  margin:20px auto;
-  display:grid;
-  grid-template-columns:repeat(8,40px);
-}
-
-.square{
-  width:40px;
-  height:40px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-  cursor:pointer;
-}
-
-.white{ background:#1faa00; }
-.black{ background:#b30000; }
-
-#time{ font-size:20px; margin:10px; }
-
-button{
-  padding:10px 20px;
-  font-size:16px;
-  margin-top:10px;
-}
+body{background:#111;color:white;text-align:center;font-family:Arial}
+#board{width:320px;margin:20px auto;display:grid;grid-template-columns:repeat(8,40px)}
+.square{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
+.white{background:#1faa00}.black{background:#b30000}
+#time{font-size:20px;margin:10px}
+button{padding:10px 20px;font-size:16px;margin-top:10px}
 </style>
 </head>
 <body>
-
 <h1>♟️ Satranç Boksu 🥊</h1>
 <div id="time">Beyaz: 3:00 | Siyah: 3:00</div>
 <div id="board"></div>
 <button onclick="startGame()">Oyunu Başlat</button>
 
 <script>
-const board = document.getElementById("board");
-const timeText = document.getElementById("time");
+const board=document.getElementById("board");
+const timeText=document.getElementById("time");
 
-let turn = "white";
-let started = false;
-let timer = null;
-let gameOver = false;
+let turn="white";
+let started=false;
+let timer=null;
+let gameOver=false;
 
-let whiteTime = 180;
-let blackTime = 180;
-const increment = 1;
+let whiteTime=180;
+let blackTime=180;
+const increment=1;
 
-const start = [
+const start=[
 "r","n","b","q","k","b","n","r",
 "p","p","p","p","p","p","p","p",
 "","","","","","","","",
@@ -73,13 +43,10 @@ const start = [
 "R","N","B","Q","K","B","N","R"
 ];
 
-let pieces = [...start];
-let selected = null;
+let pieces=[...start];
+let selected=null;
 
-const icons = {
-P:"♙",R:"♖",N:"♘",B:"♗",Q:"♕",K:"♔",
-p:"♟",r:"♜",n:"♞",b:"♝",q:"♛",k:"♚"
-};
+const icons={P:"♙",R:"♖",N:"♘",B:"♗",Q:"♕",K:"♔",p:"♟",r:"♜",n:"♞",b:"♝",q:"♛",k:"♚"};
 
 function draw(){
   board.innerHTML="";
@@ -87,8 +54,16 @@ function draw(){
     const d=document.createElement("div");
     const r=Math.floor(i/8), c=i%8;
     d.className="square "+((r+c)%2?"black":"white");
+
+    // SEÇİLİ KAREYİ SARI YAP
+    if(i===selected){
+      d.style.background="yellow";
+      d.style.color="black";
+    }
+
     d.textContent=icons[p]||"";
-    if(p) d.style.color = p===p.toUpperCase() ? "white" : "black";
+    if(p && i!==selected) d.style.color = p===p.toUpperCase() ? "white" : "black";
+
     d.onclick=()=>clickSquare(i);
     board.appendChild(d);
   });
@@ -96,13 +71,11 @@ function draw(){
 
 function sameColor(a,b){
   if(!a||!b) return false;
-  return (a===a.toUpperCase()) === (b===b.toUpperCase());
+  return (a===a.toUpperCase())===(b===b.toUpperCase());
 }
 
 function isPathClear(from,to,step){
-  for(let i=from+step;i!==to;i+=step){
-    if(pieces[i]) return false;
-  }
+  for(let i=from+step;i!==to;i+=step) if(pieces[i]) return false;
   return true;
 }
 
@@ -119,7 +92,7 @@ function validMove(from,to){
 
   switch(piece.toLowerCase()){
     case "p":{
-      const dir = piece==="P" ? -1 : 1;
+      const dir=piece==="P"?-1:1;
       if(dc===0 && !target && dr===dir) return true;
       if(dc===0 && !target && dr===2*dir && (r1===6||r1===1) && !pieces[from+8*dir]) return true;
       if(Math.abs(dc)===1 && dr===dir && target) return true;
@@ -129,14 +102,12 @@ function validMove(from,to){
       if(r1===r2) return isPathClear(from,to,dc>0?1:-1);
       if(c1===c2) return isPathClear(from,to,dr>0?8:-8);
       return false;
-
     case "b":
       if(Math.abs(dr)===Math.abs(dc)){
         const step=(dr>0?8:-8)+(dc>0?1:-1);
         return isPathClear(from,to,step);
       }
       return false;
-
     case "q":
       if(r1===r2) return isPathClear(from,to,dc>0?1:-1);
       if(c1===c2) return isPathClear(from,to,dr>0?8:-8);
@@ -145,11 +116,8 @@ function validMove(from,to){
         return isPathClear(from,to,step);
       }
       return false;
-
     case "n":
-      return (Math.abs(dr)===2 && Math.abs(dc)===1) ||
-             (Math.abs(dr)===1 && Math.abs(dc)===2);
-
+      return (Math.abs(dr)===2 && Math.abs(dc)===1)||(Math.abs(dr)===1 && Math.abs(dc)===2);
     case "k":
       return Math.abs(dr)<=1 && Math.abs(dc)<=1;
   }
@@ -165,7 +133,6 @@ function inCheck(color){
   for(let i=0;i<64;i++){
     const p=pieces[i];
     if(!p) continue;
-
     if(color==="white" && p===p.toLowerCase() && validMove(i,kingPos)) return true;
     if(color==="black" && p===p.toUpperCase() && validMove(i,kingPos)) return true;
   }
@@ -176,7 +143,6 @@ function hasLegalMoves(color){
   for(let from=0;from<64;from++){
     const p=pieces[from];
     if(!p) continue;
-
     if(color==="white" && p!==p.toUpperCase()) continue;
     if(color==="black" && p!==p.toLowerCase()) continue;
 
@@ -210,17 +176,16 @@ function checkGameEnd(){
 }
 
 function clickSquare(i){
-  if(!started || gameOver) return;
+  if(!started||gameOver) return;
 
   if(selected===null){
     if(!pieces[i]) return;
     if(turn==="white" && pieces[i]!==pieces[i].toUpperCase()) return;
     if(turn==="black" && pieces[i]!==pieces[i].toLowerCase()) return;
-    selected=i;
-    return;
+    selected=i;return;
   }
 
-  if(i===selected){ selected=null; return; }
+  if(i===selected){selected=null;return;}
   if(!validMove(selected,i)) return;
 
   const backup=[...pieces];
@@ -235,10 +200,9 @@ function clickSquare(i){
 
   selected=null;
 
-  if(turn==="white") whiteTime+=increment;
-  else blackTime+=increment;
+  if(turn==="white") whiteTime+=increment; else blackTime+=increment;
 
-  turn = turn==="white" ? "black" : "white";
+  turn=turn==="white"?"black":"white";
 
   updateClock();
   draw();
@@ -258,10 +222,9 @@ function startGame(){
   timer=setInterval(()=>{
     if(gameOver) return;
 
-    if(turn==="white") whiteTime--;
-    else blackTime--;
+    if(turn==="white") whiteTime--; else blackTime--;
 
-    if(whiteTime<=0 || blackTime<=0){
+    if(whiteTime<=0||blackTime<=0){
       alert("Süre bitti!");
       gameOver=true;
       clearInterval(timer);
@@ -274,7 +237,5 @@ function startGame(){
 updateClock();
 draw();
 </script>
-
 </body>
 </html>
-
