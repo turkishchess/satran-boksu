@@ -9,14 +9,28 @@ body{background:#111;color:white;text-align:center;font-family:Arial}
 #board{width:320px;margin:20px auto;display:grid;grid-template-columns:repeat(8,40px)}
 .square{width:40px;height:40px;display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer}
 .white{background:#1faa00}.black{background:#b30000}
+#time{font-size:20px;margin:10px}
+button{padding:10px 20px;font-size:16px;margin-top:10px}
 </style>
 </head>
 <body>
 <h1>♟️ Satranç Boksu 🥊</h1>
+<div id="time">Beyaz: 3:00 | Siyah: 3:00</div>
 <div id="board"></div>
+<button onclick="startGame()">Oyunu Başlat</button>
 
 <script>
 const board=document.getElementById("board");
+const timeText=document.getElementById("time");
+
+let turn="white";
+let started=false;
+let timer=null;
+let gameOver=false;
+
+let whiteTime=180;
+let blackTime=180;
+const increment=1;
 
 const start=[
 "r","n","b","q","k","b","n","r",
@@ -31,7 +45,6 @@ const start=[
 
 let pieces=[...start];
 let selected=null;
-let turn="white";
 
 const icons={P:"♙",R:"♖",N:"♘",B:"♗",Q:"♕",K:"♔",p:"♟",r:"♜",n:"♞",b:"♝",q:"♛",k:"♚"};
 
@@ -43,7 +56,7 @@ function draw(){
     d.className="square "+((r+c)%2?"black":"white");
     d.textContent=icons[p]||"";
     if(p) d.style.color=p===p.toUpperCase()?"white":"black";
-    d.onclick=()=>click(i);
+    d.onclick=()=>clickSquare(i);
     board.appendChild(d);
   });
 }
@@ -53,7 +66,110 @@ function sameColor(a,b){
   return (a===a.toUpperCase())===(b===b.toUpperCase());
 }
 
-function click(i){
+function isPathClear(from,to,step){
+  for(let i=from+step;i!==to;i+=step) if(pieces[i]) return false;
+  return true;
+}
+
+function validMove(from,to){
+  const piece=pieces[from];
+  if(!piece) return false;
+
+  const r1=Math.floor(from/8), c1=from%8;
+  const r2=Math.floor(to/8), c2=to%8;
+  const dr=r2-r1, dc=c2-c1;
+  const target=pieces[to];
+
+  if(target && sameColor(piece,target)) return false;
+
+  switch(piece.toLowerCase()){
+    case "p":{
+      const dir=piece==="P"?-1:1;
+      if(dc===0 && !target && dr===dir) return true;
+      if(dc===0 && !target && dr===2*dir && (r1===6||r1===1) && !pieces[from+8*dir]) return true;
+      if(Math.abs(dc)===1 && dr===dir && target) return true;
+      return false;
+    }
+    case "r":
+      if(r1===r2) return isPathClear(from,to,dc>0?1:-1);
+      if(c1===c2) return isPathClear(from,to,dr>0?8:-8);
+      return false;
+    case "b":
+      if(Math.abs(dr)===Math.abs(dc)){
+        const step=(dr>0?8:-8)+(dc>0?1:-1);
+        return isPathClear(from,to,step);
+      }
+      return false;
+    case "q":
+      if(r1===r2) return isPathClear(from,to,dc>0?1:-1);
+      if(c1===c2) return isPathClear(from,to,dr>0?8:-8);
+      if(Math.abs(dr)===Math.abs(dc)){
+        const step=(dr>0?8:-8)+(dc>0?1:-1);
+        return isPathClear(from,to,step);
+      }
+      return false;
+    case "n":
+      return (Math.abs(dr)===2 && Math.abs(dc)===1)||(Math.abs(dr)===1 && Math.abs(dc)===2);
+    case "k":
+      return Math.abs(dr)<=1 && Math.abs(dc)<=1;
+  }
+  return false;
+}
+
+function findKing(color){
+  return pieces.indexOf(color==="white"?"K":"k");
+}
+
+function inCheck(color){
+  const kingPos=findKing(color);
+  for(let i=0;i<64;i++){
+    const p=pieces[i];
+    if(!p) continue;
+    if(color==="white" && p===p.toLowerCase() && validMove(i,kingPos)) return true;
+    if(color==="black" && p===p.toUpperCase() && validMove(i,kingPos)) return true;
+  }
+  return false;
+}
+
+function hasLegalMoves(color){
+  for(let from=0;from<64;from++){
+    const p=pieces[from];
+    if(!p) continue;
+    if(color==="white" && p!==p.toUpperCase()) continue;
+    if(color==="black" && p!==p.toLowerCase()) continue;
+
+    for(let to=0;to<64;to++){
+      if(!validMove(from,to)) continue;
+
+      const backup=[...pieces];
+      pieces[to]=pieces[from];
+      pieces[from]="";
+
+      const ok=!inCheck(color);
+      pieces=[...backup];
+
+      if(ok) return true;
+    }
+  }
+  return false;
+}
+
+function checkGameEnd(){
+  if(hasLegalMoves(turn)) return;
+
+  if(inCheck(turn)){
+    alert((turn==="white"?"Beyaz":"Siyah")+" MAT oldu!");
+  }else{
+    alert("PAT! Berabere.");
+  }
+
+  gameOver=true;
+  clearInterval(timer);
+}
+
+function clickSquare(i){
+  if(!started||gameOver) return;
+
   if(selected===null){
     if(!pieces[i]) return;
     if(turn==="white" && pieces[i]!==pieces[i].toUpperCase()) return;
@@ -62,17 +178,55 @@ function click(i){
   }
 
   if(i===selected){selected=null;return;}
+  if(!validMove(selected,i)) return;
 
-  if(sameColor(pieces[selected],pieces[i])){selected=i;return;}
-
-  // ŞİMDİLİK SERBEST HAMLE (oynanabilsin diye)
+  const backup=[...pieces];
   pieces[i]=pieces[selected];
   pieces[selected]="";
+
+  if(inCheck(turn)){
+    pieces=[...backup];
+    selected=null;
+    return;
+  }
+
   selected=null;
+
+  if(turn==="white") whiteTime+=increment; else blackTime+=increment;
+
   turn=turn==="white"?"black":"white";
+
+  updateClock();
   draw();
+  checkGameEnd();
 }
 
+function updateClock(){
+  const w=`${Math.floor(whiteTime/60)}:${(whiteTime%60).toString().padStart(2,"0")}`;
+  const b=`${Math.floor(blackTime/60)}:${(blackTime%60).toString().padStart(2,"0")}`;
+  timeText.textContent=`Beyaz: ${w} | Siyah: ${b}`;
+}
+
+function startGame(){
+  if(started) return;
+  started=true;
+
+  timer=setInterval(()=>{
+    if(gameOver) return;
+
+    if(turn==="white") whiteTime--; else blackTime--;
+
+    if(whiteTime<=0||blackTime<=0){
+      alert("Süre bitti!");
+      gameOver=true;
+      clearInterval(timer);
+    }
+
+    updateClock();
+  },1000);
+}
+
+updateClock();
 draw();
 </script>
 </body>
