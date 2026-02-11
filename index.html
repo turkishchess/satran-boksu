@@ -1,174 +1,140 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Satranç Boksu</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Satranç Boksu</title>
 
-<style>
-body{
-  font-family: Arial, sans-serif;
-  text-align:center;
-  background:#222;
-  color:white;
-}
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: #222;
+      color: white;
+    }
 
-#board{
-  width:320px;
-  margin:20px auto;
-  display:grid;
-  grid-template-columns:repeat(8,40px);
-}
+    h1 {
+      margin-top: 20px;
+    }
 
-.square{
-  width:40px;
-  height:40px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:22px;
-}
+    #mode {
+      font-size: 24px;
+      margin: 10px;
+    }
 
-.white{ background:#eee; color:black; }
-.black{ background:#555; }
+    #timer {
+      font-size: 28px;
+      margin-bottom: 20px;
+    }
 
-button{
-  padding:10px 20px;
-  font-size:16px;
-  margin:10px;
-  cursor:pointer;
-}
+    #board {
+      width: 320px;
+      margin: 20px auto;
+      display: grid;
+      grid-template-columns: repeat(8, 40px);
+    }
 
-#boxing{
-  display:none;
-  margin-top:20px;
-}
+    .square {
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      cursor: pointer;
+    }
 
-.hp{
-  width:200px;
-  height:20px;
-  background:red;
-  margin:10px auto;
-  position:relative;
-}
+    .white { background: #eee; color: black; }
+    .black { background: #666; }
 
-.hp span{
-  position:absolute;
-  left:0;
-  top:0;
-  bottom:0;
-  background:lime;
-}
-</style>
+    #boxing {
+      display: none;
+      font-size: 40px;
+      margin-top: 30px;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+  </style>
 </head>
 
 <body>
+  <h1>♟️ Satranç Boksu 🥊</h1>
 
-<h1>♟️🥊 Satranç Boksu</h1>
+  <div id="mode">Mod: Satranç</div>
+  <div id="timer">Kalan süre: 180</div>
 
-<div id="modeText">Mod: Satranç</div>
-<button onclick="switchMode()">Mod Değiştir</button>
+  <div id="board"></div>
 
-<!-- SATRANÇ -->
-<div id="board"></div>
+  <div id="boxing">🥊 BOKS ZAMANI! 🥊</div>
 
-<!-- BOKS -->
-<div id="boxing">
-  <h2>Boks Raundu</h2>
+  <button onclick="startGame()">Başlat</button>
 
-  Senin Canın
-  <div class="hp"><span id="hp1" style="width:100%"></span></div>
+  <script>
+    const board = document.getElementById("board");
+    const modeText = document.getElementById("mode");
+    const timerText = document.getElementById("timer");
+    const boxingText = document.getElementById("boxing");
 
-  Rakip Canı
-  <div class="hp"><span id="hp2" style="width:100%"></span></div>
+    let mode = "chess"; // chess veya boxing
+    let time = 180; // 3 dk satranç
+    let interval;
 
-  <button onclick="punch()">Yumruk At</button>
-</div>
+    const pieces = [
+      "♜","♞","♝","♛","♚","♝","♞","♜",
+      "♟","♟","♟","♟","♟","♟","♟","♟",
+      "","","","","","","","",
+      "","","","","","","","",
+      "","","","","","","","",
+      "","","","","","","","",
+      "♙","♙","♙","♙","♙","♙","♙","♙",
+      "♖","♘","♗","♕","♔","♗","♘","♖"
+    ];
 
-<script>
-/* ================= SATRANÇ ================= */
+    function drawBoard() {
+      board.innerHTML = "";
+      pieces.forEach((piece, i) => {
+        const square = document.createElement("div");
+        square.className =
+          "square " + ((Math.floor(i / 8) + i) % 2 === 0 ? "white" : "black");
+        square.textContent = piece;
+        board.appendChild(square);
+      });
+    }
 
-const board = document.getElementById("board");
+    function switchMode() {
+      if (mode === "chess") {
+        mode = "boxing";
+        time = 60; // 1 dk boks
+        modeText.textContent = "Mod: Boks";
+        boxingText.style.display = "block";
+        board.style.display = "none";
+      } else {
+        mode = "chess";
+        time = 180; // tekrar 3 dk satranç
+        modeText.textContent = "Mod: Satranç";
+        boxingText.style.display = "none";
+        board.style.display = "grid";
+      }
+    }
 
-const start =
-"♜♞♝♛♚♝♞♜" +
-"♟♟♟♟♟♟♟♟" +
-"        " +
-"        " +
-"        " +
-"        " +
-"♙♙♙♙♙♙♙♙" +
-"♖♘♗♕♔♗♘♖";
+    function startGame() {
+      clearInterval(interval);
+      drawBoard();
+      interval = setInterval(() => {
+        time--;
+        timerText.textContent = "Kalan süre: " + time;
 
-function drawBoard(){
-  board.innerHTML="";
-  for(let i=0;i<64;i++){
-    const sq=document.createElement("div");
-    sq.className="square "+(((i+Math.floor(i/8))%2)?"black":"white");
-    sq.textContent=start[i];
-    board.appendChild(sq);
-  }
-}
-drawBoard();
+        if (time <= 0) {
+          switchMode();
+        }
+      }, 1000);
+    }
 
-/* ================= MOD DEĞİŞTİR ================= */
-
-let chessMode=true;
-
-function switchMode(){
-  chessMode=!chessMode;
-
-  document.getElementById("modeText").textContent =
-    chessMode ? "Mod: Satranç" : "Mod: Boks";
-
-  board.style.display = chessMode ? "grid" : "none";
-  document.getElementById("boxing").style.display =
-    chessMode ? "none" : "block";
-}
-
-/* ================= BOKS ================= */
-
-let hp1=100;
-let hp2=100;
-
-function punch(){
-  if(chessMode) return;
-
-  const dmg=Math.floor(Math.random()*20)+5;
-  hp2-=dmg;
-
-  if(hp2<0) hp2=0;
-
-  document.getElementById("hp2").style.width=hp2+"%";
-
-  if(hp2===0){
-    alert("Kazandın! 🏆");
-    resetGame();
-    return;
-  }
-
-  // rakip vurur
-  const enemy=Math.floor(Math.random()*15)+5;
-  hp1-=enemy;
-  if(hp1<0) hp1=0;
-
-  document.getElementById("hp1").style.width=hp1+"%";
-
-  if(hp1===0){
-    alert("Kaybettin 😢");
-    resetGame();
-  }
-}
-
-function resetGame(){
-  hp1=100;
-  hp2=100;
-  document.getElementById("hp1").style.width="100%";
-  document.getElementById("hp2").style.width="100%";
-  chessMode=true;
-  switchMode();
-}
-</script>
-
+    drawBoard();
+  </script>
 </body>
 </html>
